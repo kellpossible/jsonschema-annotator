@@ -1,0 +1,9 @@
+---
+source: src/annotator/toml.rs
+expression: result
+---
+# This is a very long description that
+# should be wrapped across multiple
+# lines when the max line width is set
+# to a reasonable value
+name = "test"

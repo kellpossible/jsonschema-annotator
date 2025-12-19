@@ -1,0 +1,13 @@
+---
+source: src/annotator/yaml.rs
+expression: result
+---
+# Database
+database:
+  # Connection Settings
+  connection:
+    # Host
+    # Database server hostname
+    host: localhost
+    # Port
+    port: 5432

@@ -1,0 +1,6 @@
+---
+source: src/annotator/yaml.rs
+expression: result
+---
+# Full description
+name: test

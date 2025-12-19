@@ -1,0 +1,12 @@
+---
+source: src/annotator/yaml.rs
+expression: result
+---
+server:
+  # Hostname
+  host: localhost
+  # Port Number
+  port: 8080
+  # Enabled
+  # Whether the server is enabled
+  enabled: true

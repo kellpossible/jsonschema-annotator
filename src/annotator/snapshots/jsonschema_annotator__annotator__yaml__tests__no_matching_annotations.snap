@@ -1,0 +1,6 @@
+---
+source: src/annotator/yaml.rs
+expression: result
+---
+name: test
+age: 30

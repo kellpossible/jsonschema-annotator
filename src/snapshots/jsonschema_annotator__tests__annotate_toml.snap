@@ -1,0 +1,10 @@
+---
+source: src/lib.rs
+expression: result
+---
+# Server
+# Server configuration
+[server]
+# Port
+# The port to listen on
+port = 8080

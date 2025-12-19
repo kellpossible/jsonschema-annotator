@@ -1,0 +1,13 @@
+---
+source: src/annotator/toml.rs
+expression: result
+---
+# Database
+[database]
+# Connection Settings
+[database.connection]
+# Host
+# Database server hostname
+host = "localhost"
+# Port
+port = 5432

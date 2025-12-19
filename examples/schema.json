@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "server": {
+      "title": "Server Configuration",
+      "description": "HTTP server settings",
+      "properties": {
+        "port": {
+          "title": "Port",
+          "description": "The port number to listen on"
+        },
+        "host": {
+          "title": "Host",
+          "description": "The hostname to bind to"
+        }
+      }
+    }
+  }
+}
