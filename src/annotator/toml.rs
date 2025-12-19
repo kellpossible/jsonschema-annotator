@@ -32,6 +32,12 @@ impl TomlAnnotator {
             }
         }
 
+        if self.config.include_default {
+            if let Some(default) = &annotation.default {
+                lines.push(format!("# Default: {}", default));
+            }
+        }
+
         if lines.is_empty() {
             None
         } else {
@@ -256,8 +262,10 @@ port = 5432
         let long_desc = "This is a very long description that should be wrapped across multiple lines when the max line width is set to a reasonable value";
         let annotations = make_annotations(&[("name", None, Some(long_desc))]);
 
-        let mut config = AnnotatorConfig::default();
-        config.max_line_width = Some(40);
+        let config = AnnotatorConfig {
+            max_line_width: Some(40),
+            ..Default::default()
+        };
         let annotator = TomlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
 
@@ -272,8 +280,10 @@ port = 5432
             ("host", Some("Host"), None),
         ]);
 
-        let mut config = AnnotatorConfig::default();
-        config.existing_comments = ExistingCommentBehavior::Skip;
+        let config = AnnotatorConfig {
+            existing_comments: ExistingCommentBehavior::Skip,
+            ..Default::default()
+        };
         let annotator = TomlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
 
@@ -286,8 +296,10 @@ port = 5432
         let content = "# Existing comment\nport = 8080\n";
         let annotations = make_annotations(&[("port", Some("Port"), None)]);
 
-        let mut config = AnnotatorConfig::default();
-        config.existing_comments = ExistingCommentBehavior::Append;
+        let config = AnnotatorConfig {
+            existing_comments: ExistingCommentBehavior::Append,
+            ..Default::default()
+        };
         let annotator = TomlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
 
@@ -299,10 +311,52 @@ port = 5432
         let content = "# Existing comment\nport = 8080\n";
         let annotations = make_annotations(&[("port", Some("Port"), None)]);
 
-        let mut config = AnnotatorConfig::default();
-        config.existing_comments = ExistingCommentBehavior::Replace;
+        let config = AnnotatorConfig {
+            existing_comments: ExistingCommentBehavior::Replace,
+            ..Default::default()
+        };
         let annotator = TomlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_include_default_value() {
+        let content = "port = 8080\n";
+
+        let mut map = AnnotationMap::new();
+        map.insert(
+            Annotation::new("port")
+                .with_title("Port")
+                .with_description("The port number")
+                .with_default("3000"),
+        );
+
+        let config = AnnotatorConfig {
+            include_default: true,
+            ..Default::default()
+        };
+        let annotator = TomlAnnotator::new(config);
+        let result = annotator.annotate(content, &map).unwrap();
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_default_value_disabled_by_default() {
+        let content = "port = 8080\n";
+
+        let mut map = AnnotationMap::new();
+        map.insert(
+            Annotation::new("port")
+                .with_title("Port")
+                .with_default("3000"),
+        );
+
+        // Default config has include_default = false
+        let annotator = TomlAnnotator::new(AnnotatorConfig::default());
+        let result = annotator.annotate(content, &map).unwrap();
 
         assert_snapshot!(result);
     }

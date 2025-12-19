@@ -9,6 +9,8 @@ pub struct Annotation {
     pub title: Option<String>,
     /// Schema `description` field
     pub description: Option<String>,
+    /// Schema `default` field (as a string representation)
+    pub default: Option<String>,
 }
 
 impl Annotation {
@@ -18,6 +20,7 @@ impl Annotation {
             path: path.into(),
             title: None,
             description: None,
+            default: None,
         }
     }
 
@@ -30,6 +33,12 @@ impl Annotation {
     /// Set the description
     pub fn with_description(mut self, description: impl Into<String>) -> Self {
         self.description = Some(description.into());
+        self
+    }
+
+    /// Set the default value
+    pub fn with_default(mut self, default: impl Into<String>) -> Self {
+        self.default = Some(default.into());
         self
     }
 
@@ -53,7 +62,7 @@ impl Annotation {
 
     /// Check if this annotation has any content
     pub fn is_empty(&self) -> bool {
-        self.title.is_none() && self.description.is_none()
+        self.title.is_none() && self.description.is_none() && self.default.is_none()
     }
 }
 

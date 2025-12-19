@@ -34,6 +34,12 @@ impl YamlAnnotator {
             }
         }
 
+        if self.config.include_default {
+            if let Some(default) = &annotation.default {
+                lines.push(format!("{}# Default: {}", indent_str, default));
+            }
+        }
+
         if lines.is_empty() {
             None
         } else {
@@ -405,8 +411,10 @@ mod tests {
             ("host", Some("Host"), None),
         ]);
 
-        let mut config = AnnotatorConfig::default();
-        config.existing_comments = ExistingCommentBehavior::Skip;
+        let config = AnnotatorConfig {
+            existing_comments: ExistingCommentBehavior::Skip,
+            ..Default::default()
+        };
         let annotator = YamlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
 
@@ -419,8 +427,10 @@ mod tests {
         let content = "# Existing comment\nport: 8080\n";
         let annotations = make_annotations(&[("port", Some("Port"), None)]);
 
-        let mut config = AnnotatorConfig::default();
-        config.existing_comments = ExistingCommentBehavior::Append;
+        let config = AnnotatorConfig {
+            existing_comments: ExistingCommentBehavior::Append,
+            ..Default::default()
+        };
         let annotator = YamlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
 
@@ -432,10 +442,52 @@ mod tests {
         let content = "# Existing comment\nport: 8080\n";
         let annotations = make_annotations(&[("port", Some("Port"), None)]);
 
-        let mut config = AnnotatorConfig::default();
-        config.existing_comments = ExistingCommentBehavior::Replace;
+        let config = AnnotatorConfig {
+            existing_comments: ExistingCommentBehavior::Replace,
+            ..Default::default()
+        };
         let annotator = YamlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_include_default_value() {
+        let content = "port: 8080\n";
+
+        let mut map = AnnotationMap::new();
+        map.insert(
+            Annotation::new("port")
+                .with_title("Port")
+                .with_description("The port number")
+                .with_default("3000"),
+        );
+
+        let config = AnnotatorConfig {
+            include_default: true,
+            ..Default::default()
+        };
+        let annotator = YamlAnnotator::new(config);
+        let result = annotator.annotate(content, &map).unwrap();
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_default_value_disabled_by_default() {
+        let content = "port: 8080\n";
+
+        let mut map = AnnotationMap::new();
+        map.insert(
+            Annotation::new("port")
+                .with_title("Port")
+                .with_default("3000"),
+        );
+
+        // Default config has include_default = false
+        let annotator = YamlAnnotator::new(AnnotatorConfig::default());
+        let result = annotator.annotate(content, &map).unwrap();
 
         assert_snapshot!(result);
     }

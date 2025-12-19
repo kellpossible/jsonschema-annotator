@@ -4,6 +4,27 @@ use serde_json::Value;
 use super::annotation::{Annotation, AnnotationMap};
 use super::refs::resolve_refs;
 
+/// Format a JSON value as a human-readable string for display in comments
+fn format_default_value(value: &Value) -> String {
+    match value {
+        Value::Null => "null".to_string(),
+        Value::Bool(b) => b.to_string(),
+        Value::Number(n) => n.to_string(),
+        Value::String(s) => format!("\"{}\"", s),
+        Value::Array(arr) => {
+            let items: Vec<String> = arr.iter().map(format_default_value).collect();
+            format!("[{}]", items.join(", "))
+        }
+        Value::Object(obj) => {
+            let items: Vec<String> = obj
+                .iter()
+                .map(|(k, v)| format!("{}: {}", k, format_default_value(v)))
+                .collect();
+            format!("{{{}}}", items.join(", "))
+        }
+    }
+}
+
 /// Extract annotations from a JSON Schema
 ///
 /// This resolves $refs and walks the schema recursively,
@@ -23,17 +44,21 @@ fn walk_schema(value: &Value, current_path: &mut Vec<String>, annotations: &mut 
         return;
     };
 
-    // Extract title/description at current level
+    // Extract title/description/default at current level
     let title = obj.get("title").and_then(|v| v.as_str());
     let desc = obj.get("description").and_then(|v| v.as_str());
+    let default = obj.get("default").map(format_default_value);
 
-    if title.is_some() || desc.is_some() {
+    if title.is_some() || desc.is_some() || default.is_some() {
         let mut ann = Annotation::new(current_path.join("."));
         if let Some(t) = title {
             ann = ann.with_title(t);
         }
         if let Some(d) = desc {
             ann = ann.with_description(d);
+        }
+        if let Some(d) = default {
+            ann = ann.with_default(d);
         }
         annotations.insert(ann);
     }
@@ -351,5 +376,66 @@ mod tests {
         let advanced = annotations.get("config.advanced").unwrap();
         assert_eq!(advanced.title, Some("Advanced Mode".to_string()));
         assert_eq!(advanced.description, Some("For power users".to_string()));
+    }
+
+    #[test]
+    fn test_extract_default_values() {
+        let schema_json = json!({
+            "properties": {
+                "port": {
+                    "title": "Port",
+                    "description": "The port number",
+                    "default": 8080
+                },
+                "host": {
+                    "title": "Host",
+                    "default": "localhost"
+                },
+                "enabled": {
+                    "title": "Enabled",
+                    "default": true
+                },
+                "tags": {
+                    "title": "Tags",
+                    "default": ["web", "api"]
+                }
+            }
+        });
+
+        let schema: Schema = schema_json.try_into().unwrap();
+        let annotations = extract_annotations(&schema);
+
+        let port = annotations.get("port").unwrap();
+        assert_eq!(port.title, Some("Port".to_string()));
+        assert_eq!(port.default, Some("8080".to_string()));
+
+        let host = annotations.get("host").unwrap();
+        assert_eq!(host.default, Some("\"localhost\"".to_string()));
+
+        let enabled = annotations.get("enabled").unwrap();
+        assert_eq!(enabled.default, Some("true".to_string()));
+
+        let tags = annotations.get("tags").unwrap();
+        assert_eq!(tags.default, Some("[\"web\", \"api\"]".to_string()));
+    }
+
+    #[test]
+    fn test_extract_only_default() {
+        // Test that a property with only a default value still gets extracted
+        let schema_json = json!({
+            "properties": {
+                "timeout": {
+                    "default": 30
+                }
+            }
+        });
+
+        let schema: Schema = schema_json.try_into().unwrap();
+        let annotations = extract_annotations(&schema);
+
+        let timeout = annotations.get("timeout").unwrap();
+        assert_eq!(timeout.title, None);
+        assert_eq!(timeout.description, None);
+        assert_eq!(timeout.default, Some("30".to_string()));
     }
 }

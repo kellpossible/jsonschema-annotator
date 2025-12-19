@@ -31,6 +31,10 @@ struct Cli {
     #[arg(long, default_value = "80")]
     max_width: usize,
 
+    /// Include default values in comments
+    #[arg(long)]
+    include_default: bool,
+
     /// How to handle fields that already have comments
     #[arg(long, value_enum, default_value = "prepend")]
     existing_comments: ExistingCommentsMode,
@@ -106,6 +110,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let config = AnnotatorConfig {
         include_title: matches!(cli.include, IncludeMode::Title | IncludeMode::Both),
         include_description: matches!(cli.include, IncludeMode::Description | IncludeMode::Both),
+        include_default: cli.include_default,
         max_line_width: Some(cli.max_width),
         existing_comments,
     };

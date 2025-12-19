@@ -28,6 +28,8 @@ pub struct AnnotatorConfig {
     pub include_title: bool,
     /// Include description in comments
     pub include_description: bool,
+    /// Include default value in comments
+    pub include_default: bool,
     /// Maximum line width for wrapping descriptions (None = no wrap)
     pub max_line_width: Option<usize>,
     /// How to handle fields that already have comments
@@ -39,6 +41,7 @@ impl Default for AnnotatorConfig {
         Self {
             include_title: true,
             include_description: true,
+            include_default: false,
             max_line_width: Some(80),
             existing_comments: ExistingCommentBehavior::default(),
         }
