@@ -1,36 +1,4 @@
-//! # jsonschema-annotator
-//!
-//! Annotate YAML and TOML configuration files with comments derived from
-//! JSON Schema `title` and `description` properties.
-//!
-//! ## Example
-//!
-//! ```rust
-//! use jsonschema_annotator::{annotate, TargetFormat, AnnotatorConfig};
-//! use schemars::Schema;
-//!
-//! let schema_json = r#"{
-//!     "properties": {
-//!         "port": {
-//!             "title": "Port",
-//!             "description": "Server port number"
-//!         }
-//!     }
-//! }"#;
-//!
-//! let schema: Schema = serde_json::from_str(schema_json).unwrap();
-//! let config_str = "port = 8080";
-//!
-//! let annotated = annotate(
-//!     &schema,
-//!     config_str,
-//!     TargetFormat::Toml,
-//!     AnnotatorConfig::default(),
-//! ).unwrap();
-//!
-//! assert!(annotated.contains("# Port"));
-//! assert!(annotated.contains("# Server port number"));
-//! ```
+#![doc = include_str!("../README.md")]
 
 mod annotator;
 mod error;

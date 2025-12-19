@@ -58,6 +58,15 @@ fn walk_schema(value: &Value, current_path: &mut Vec<String>, annotations: &mut 
             walk_schema(additional, current_path, annotations);
         }
     }
+
+    // Handle oneOf/allOf/anyOf composition
+    for keyword in ["oneOf", "allOf", "anyOf"] {
+        if let Some(schemas) = obj.get(keyword).and_then(|v| v.as_array()) {
+            for schema in schemas {
+                walk_schema(schema, current_path, annotations);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -229,5 +238,118 @@ mod tests {
         // Items inherit the parent path
         let user_name = annotations.get("users.name").unwrap();
         assert_eq!(user_name.title, Some("User Name".to_string()));
+    }
+
+    #[test]
+    fn test_extract_oneof() {
+        let schema_json = json!({
+            "properties": {
+                "value": {
+                    "title": "Value",
+                    "oneOf": [
+                        {
+                            "properties": {
+                                "string_val": {
+                                    "title": "String Value",
+                                    "description": "A string value"
+                                }
+                            }
+                        },
+                        {
+                            "properties": {
+                                "number_val": {
+                                    "title": "Number Value"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+
+        let schema: Schema = schema_json.try_into().unwrap();
+        let annotations = extract_annotations(&schema);
+
+        let value = annotations.get("value").unwrap();
+        assert_eq!(value.title, Some("Value".to_string()));
+
+        let string_val = annotations.get("value.string_val").unwrap();
+        assert_eq!(string_val.title, Some("String Value".to_string()));
+        assert_eq!(string_val.description, Some("A string value".to_string()));
+
+        let number_val = annotations.get("value.number_val").unwrap();
+        assert_eq!(number_val.title, Some("Number Value".to_string()));
+    }
+
+    #[test]
+    fn test_extract_allof() {
+        let schema_json = json!({
+            "allOf": [
+                {
+                    "properties": {
+                        "base": {
+                            "title": "Base Property"
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "extended": {
+                            "title": "Extended Property"
+                        }
+                    }
+                }
+            ]
+        });
+
+        let schema: Schema = schema_json.try_into().unwrap();
+        let annotations = extract_annotations(&schema);
+
+        let base = annotations.get("base").unwrap();
+        assert_eq!(base.title, Some("Base Property".to_string()));
+
+        let extended = annotations.get("extended").unwrap();
+        assert_eq!(extended.title, Some("Extended Property".to_string()));
+    }
+
+    #[test]
+    fn test_extract_anyof() {
+        let schema_json = json!({
+            "properties": {
+                "config": {
+                    "title": "Config",
+                    "anyOf": [
+                        {
+                            "properties": {
+                                "simple": {
+                                    "title": "Simple Mode"
+                                }
+                            }
+                        },
+                        {
+                            "properties": {
+                                "advanced": {
+                                    "title": "Advanced Mode",
+                                    "description": "For power users"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+
+        let schema: Schema = schema_json.try_into().unwrap();
+        let annotations = extract_annotations(&schema);
+
+        let config = annotations.get("config").unwrap();
+        assert_eq!(config.title, Some("Config".to_string()));
+
+        let simple = annotations.get("config.simple").unwrap();
+        assert_eq!(simple.title, Some("Simple Mode".to_string()));
+
+        let advanced = annotations.get("config.advanced").unwrap();
+        assert_eq!(advanced.title, Some("Advanced Mode".to_string()));
+        assert_eq!(advanced.description, Some("For power users".to_string()));
     }
 }
