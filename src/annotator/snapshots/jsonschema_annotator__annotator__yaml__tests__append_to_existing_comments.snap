@@ -1,0 +1,7 @@
+---
+source: src/annotator/yaml.rs
+expression: result
+---
+# Existing comment
+# Port
+port: 8080

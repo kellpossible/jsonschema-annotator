@@ -7,6 +7,20 @@ pub use self::yaml::YamlAnnotator;
 use crate::error::AnnotatorError;
 use crate::schema::AnnotationMap;
 
+/// How to handle fields that already have comments
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ExistingCommentBehavior {
+    /// Skip annotating fields that already have comments
+    Skip,
+    /// Add annotation before existing comment
+    #[default]
+    Prepend,
+    /// Add annotation after existing comment
+    Append,
+    /// Replace existing comment with annotation
+    Replace,
+}
+
 /// Configuration for annotation behavior
 #[derive(Debug, Clone)]
 pub struct AnnotatorConfig {
@@ -16,8 +30,8 @@ pub struct AnnotatorConfig {
     pub include_description: bool,
     /// Maximum line width for wrapping descriptions (None = no wrap)
     pub max_line_width: Option<usize>,
-    /// Preserve existing comments in the document
-    pub preserve_existing: bool,
+    /// How to handle fields that already have comments
+    pub existing_comments: ExistingCommentBehavior,
 }
 
 impl Default for AnnotatorConfig {
@@ -26,7 +40,7 @@ impl Default for AnnotatorConfig {
             include_title: true,
             include_description: true,
             max_line_width: Some(80),
-            preserve_existing: true,
+            existing_comments: ExistingCommentBehavior::default(),
         }
     }
 }

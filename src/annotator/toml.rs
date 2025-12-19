@@ -1,6 +1,6 @@
 use toml_edit::{DocumentMut, Item, Table};
 
-use super::{Annotator, AnnotatorConfig};
+use super::{Annotator, AnnotatorConfig, ExistingCommentBehavior};
 use crate::error::{AnnotatorError, AnnotatorErrorKind, Error};
 use crate::schema::{Annotation, AnnotationMap};
 
@@ -64,15 +64,22 @@ impl TomlAnnotator {
                         if let Some(ann) = annotations.get(&path_string) {
                             if let Some(comment) = self.format_comment(ann) {
                                 let decor = nested.decor_mut();
-                                if self.config.preserve_existing {
-                                    let existing = decor.prefix().map(|s| s.as_str().unwrap_or("")).unwrap_or("");
-                                    if !existing.is_empty() {
-                                        decor.set_prefix(format!("{}{}", comment, existing));
-                                    } else {
-                                        decor.set_prefix(comment);
+                                let existing = decor.prefix().map(|s| s.as_str().unwrap_or("")).unwrap_or("");
+                                let has_existing = existing.trim().starts_with('#');
+
+                                let new_prefix = match self.config.existing_comments {
+                                    ExistingCommentBehavior::Skip if has_existing => None,
+                                    ExistingCommentBehavior::Prepend if has_existing => {
+                                        Some(format!("{}{}", comment, existing))
                                     }
-                                } else {
-                                    decor.set_prefix(comment);
+                                    ExistingCommentBehavior::Append if has_existing => {
+                                        Some(format!("{}{}", existing, comment))
+                                    }
+                                    _ => Some(comment), // Replace or no existing comment
+                                };
+
+                                if let Some(prefix) = new_prefix {
+                                    decor.set_prefix(prefix);
                                 }
                             }
                         }
@@ -87,15 +94,22 @@ impl TomlAnnotator {
                         if let Some(ann) = annotations.get(&path_string) {
                             if let Some(comment) = self.format_comment(ann) {
                                 let decor = key.leaf_decor_mut();
-                                if self.config.preserve_existing {
-                                    let existing = decor.prefix().map(|s| s.as_str().unwrap_or("")).unwrap_or("");
-                                    if !existing.is_empty() {
-                                        decor.set_prefix(format!("{}{}", comment, existing));
-                                    } else {
-                                        decor.set_prefix(comment);
+                                let existing = decor.prefix().map(|s| s.as_str().unwrap_or("")).unwrap_or("");
+                                let has_existing = existing.trim().starts_with('#');
+
+                                let new_prefix = match self.config.existing_comments {
+                                    ExistingCommentBehavior::Skip if has_existing => None,
+                                    ExistingCommentBehavior::Prepend if has_existing => {
+                                        Some(format!("{}{}", comment, existing))
                                     }
-                                } else {
-                                    decor.set_prefix(comment);
+                                    ExistingCommentBehavior::Append if has_existing => {
+                                        Some(format!("{}{}", existing, comment))
+                                    }
+                                    _ => Some(comment), // Replace or no existing comment
+                                };
+
+                                if let Some(prefix) = new_prefix {
+                                    decor.set_prefix(prefix);
                                 }
                             }
                         }
@@ -244,6 +258,49 @@ port = 5432
 
         let mut config = AnnotatorConfig::default();
         config.max_line_width = Some(40);
+        let annotator = TomlAnnotator::new(config);
+        let result = annotator.annotate(content, &annotations).unwrap();
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_skip_existing_comments() {
+        let content = "# Existing comment\nport = 8080\nhost = \"localhost\"\n";
+        let annotations = make_annotations(&[
+            ("port", Some("Port"), None),
+            ("host", Some("Host"), None),
+        ]);
+
+        let mut config = AnnotatorConfig::default();
+        config.existing_comments = ExistingCommentBehavior::Skip;
+        let annotator = TomlAnnotator::new(config);
+        let result = annotator.annotate(content, &annotations).unwrap();
+
+        // port should keep its existing comment, host should get the annotation
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_append_to_existing_comments() {
+        let content = "# Existing comment\nport = 8080\n";
+        let annotations = make_annotations(&[("port", Some("Port"), None)]);
+
+        let mut config = AnnotatorConfig::default();
+        config.existing_comments = ExistingCommentBehavior::Append;
+        let annotator = TomlAnnotator::new(config);
+        let result = annotator.annotate(content, &annotations).unwrap();
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_replace_existing_comments() {
+        let content = "# Existing comment\nport = 8080\n";
+        let annotations = make_annotations(&[("port", Some("Port"), None)]);
+
+        let mut config = AnnotatorConfig::default();
+        config.existing_comments = ExistingCommentBehavior::Replace;
         let annotator = TomlAnnotator::new(config);
         let result = annotator.annotate(content, &annotations).unwrap();
 

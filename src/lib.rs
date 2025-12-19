@@ -5,7 +5,7 @@ mod error;
 mod format;
 mod schema;
 
-pub use annotator::{Annotator, AnnotatorConfig, TomlAnnotator, YamlAnnotator};
+pub use annotator::{Annotator, AnnotatorConfig, ExistingCommentBehavior, TomlAnnotator, YamlAnnotator};
 pub use error::{AnnotatorError, AnnotatorErrorKind, Error, ResultExt, SchemaError, SchemaErrorKind};
 pub use format::TargetFormat;
 pub use schema::{extract_annotations, Annotation, AnnotationMap};

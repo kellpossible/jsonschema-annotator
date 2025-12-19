@@ -3,7 +3,7 @@ use std::io::{self, Read, Write};
 use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum};
-use jsonschema_annotator::{annotate, AnnotatorConfig, TargetFormat};
+use jsonschema_annotator::{annotate, AnnotatorConfig, ExistingCommentBehavior, TargetFormat};
 use schemars::Schema;
 
 #[derive(Parser)]
@@ -31,6 +31,10 @@ struct Cli {
     #[arg(long, default_value = "80")]
     max_width: usize,
 
+    /// How to handle fields that already have comments
+    #[arg(long, value_enum, default_value = "prepend")]
+    existing_comments: ExistingCommentsMode,
+
     /// Overwrite output file if it exists
     #[arg(long)]
     force: bool,
@@ -41,6 +45,18 @@ enum IncludeMode {
     Title,
     Description,
     Both,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum ExistingCommentsMode {
+    /// Skip fields that already have comments
+    Skip,
+    /// Add annotation before existing comment
+    Prepend,
+    /// Add annotation after existing comment
+    Append,
+    /// Replace existing comment with annotation
+    Replace,
 }
 
 fn main() {
@@ -80,11 +96,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build config
+    let existing_comments = match cli.existing_comments {
+        ExistingCommentsMode::Skip => ExistingCommentBehavior::Skip,
+        ExistingCommentsMode::Prepend => ExistingCommentBehavior::Prepend,
+        ExistingCommentsMode::Append => ExistingCommentBehavior::Append,
+        ExistingCommentsMode::Replace => ExistingCommentBehavior::Replace,
+    };
+
     let config = AnnotatorConfig {
         include_title: matches!(cli.include, IncludeMode::Title | IncludeMode::Both),
         include_description: matches!(cli.include, IncludeMode::Description | IncludeMode::Both),
         max_line_width: Some(cli.max_width),
-        preserve_existing: true,
+        existing_comments,
     };
 
     // Annotate
