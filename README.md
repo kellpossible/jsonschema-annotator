@@ -1,5 +1,7 @@
 # jsonschema-annotator
 
+**WARNING: This project was vibe-coded with claude with minimal review, use at your own risk!**
+
 Annotate YAML and TOML configuration files with comments derived from JSON Schema `title` and `description` fields.
 
 ## Example
