@@ -1,0 +1,7 @@
+[tools]
+rust = { version = "1.99.1", components = "clippy,rustfmt" }
+git-cliff = "2.14.2"
+
+[tasks.codegen-changelog]
+description = "Generate CHANGELOG.md from git commits"
+run = "git-cliff -o CHANGELOG.md"
