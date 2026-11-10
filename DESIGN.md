@@ -526,7 +526,7 @@ edition = "2021"
 schemars = "1.1"            # JSON Schema type (Schema struct)
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"          # JSON parsing, $ref resolution internals
-serde_yaml = "0.9"          # YAML schema file parsing (CLI)
+serde_norway = "0.9"        # YAML schema file parsing (CLI)
 toml_edit = "0.22"          # TOML editing with comments
 yaml-edit = "0.1"           # YAML editing (lossless)
 clap = { version = "4.5", features = ["derive"] }  # CLI

@@ -76,7 +76,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // Read and parse schema
     let schema_content = fs::read_to_string(&cli.schema)?;
     let schema: Schema = if cli.schema.extension().map(|e| e == "yaml" || e == "yml").unwrap_or(false) {
-        serde_yaml::from_str(&schema_content)?
+        serde_norway::from_str(&schema_content)?
     } else {
         serde_json::from_str(&schema_content)?
     };

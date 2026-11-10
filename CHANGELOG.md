@@ -1,3 +1,10 @@
+## [0.2.1] - 2026-11-10
+
+### Other
+
+- Switch to mise for tasks and tooling, add git-cliff
+- Replace unmaintained serde_yaml with serde_norway
+
 ## [0.2.0] - 2025-12-19
 
 ### Other

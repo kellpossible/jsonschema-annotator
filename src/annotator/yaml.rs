@@ -167,7 +167,7 @@ impl Annotator for YamlAnnotator {
         annotations: &AnnotationMap,
     ) -> Result<String, AnnotatorError> {
         // Validate YAML syntax by attempting to parse
-        let _: serde_yaml::Value = serde_yaml::from_str(content)
+        let _: serde_norway::Value = serde_norway::from_str(content)
             .map_err(|e| Error::new(AnnotatorErrorKind::Parse).with_source(e))?;
 
         let line_paths = self.build_line_path_map(content);
